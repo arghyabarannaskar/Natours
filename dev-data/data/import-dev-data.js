@@ -5,23 +5,19 @@ const Tour = require('./../../models/tourModel');
 
 dotenv.config({ path: './config.env' });
 
-const DB = process.env.DATABASE.replace(
-  '<PASSWORD>',
-  process.env.DATABASE_PASSWORD
-);
+// Connect to local MongoDB
+const DB = 'mongodb://127.0.0.1:27017/natours'; // Replace `natours` with your database name
 
 mongoose
-  .connect(DB, {
-    useNewUrlParser: true,
-    useCreateIndex: true,
-    useFindAndModify: false
-  })
-  .then(() => console.log('DB connection successful!'));
+  .connect(DB)
+  .then(() => console.log('DB connection successful!'))
+  .catch(err => {
+    console.error('DB connection failed:', err.message);
+    process.exit(1); // Exit process if DB connection fails
+  });
 
 // READ JSON FILE
-const tours = JSON.parse(
-  fs.readFileSync(`${__dirname}/tours-simple.json`, 'utf-8')
-);
+const tours = JSON.parse(fs.readFileSync(`${__dirname}/tours.json`, 'utf-8'));
 
 // IMPORT DATA INTO DB
 const importData = async () => {
