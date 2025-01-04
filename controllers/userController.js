@@ -51,6 +51,11 @@ exports.updateMe = async (req, res, next) => {
   });
 };
 
+exports.getMe = (req, res, next) => {
+  req.params.id = req.user.id;
+  next();
+};
+
 exports.deleteMe = catchAsync(async (req, res, next) => {
   await userModel.findByIdAndUpdate(req.user.id, { active: false });
 
@@ -60,25 +65,26 @@ exports.deleteMe = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.getUser = catchAsync(async (req, res, next) => {
-  const user = await userModel.findById(req.params.id);
+exports.getUser = factory.getOne(userModel);
+// exports.getUser = catchAsync(async (req, res, next) => {
+//   const user = await userModel.findById(req.params.id);
 
-  if (!user) {
-    return next(new AppError('No user found with that ID', 404));
-  }
+//   if (!user) {
+//     return next(new AppError('No user found with that ID', 404));
+//   }
 
-  res.status(200).json({
-    status: 'success',
-    data: {
-      user
-    }
-  });
-});
+//   res.status(200).json({
+//     status: 'success',
+//     data: {
+//       user
+//     }
+//   });
+// });
 
 exports.createUser = (req, res) => {
   res.status(500).json({
     status: 'error',
-    message: 'This route is not yet defined!'
+    message: 'This route is not yet defined! Please use /signup instead.'
   });
 };
 

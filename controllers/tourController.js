@@ -30,26 +30,27 @@ exports.getAllTours = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.getTour = catchAsync(async (req, res, next) => {
-  const tour = await Tour.findById(req.params.id)
-    .populate({
-      path: 'guides',
-      select: '-__v -passwordChangedAt'
-    })
-    .populate('reviews');
-  // Tour.findOne({ _id: req.params.id })
+exports.getTour = factory.getOne(Tour, { path: 'reviews' });
+// exports.getTour = catchAsync(async (req, res, next) => {
+//   const tour = await Tour.findById(req.params.id)
+//     .populate({
+//       path: 'guides',
+//       select: '-__v -passwordChangedAt'
+//     })
+//     .populate('reviews');
+//   // Tour.findOne({ _id: req.params.id })
 
-  if (!tour) {
-    return next(new AppError('No tour found with that ID', 404));
-  }
+//   if (!tour) {
+//     return next(new AppError('No tour found with that ID', 404));
+//   }
 
-  res.status(200).json({
-    status: 'success',
-    data: {
-      tour
-    }
-  });
-});
+//   res.status(200).json({
+//     status: 'success',
+//     data: {
+//       tour
+//     }
+//   });
+// });
 
 exports.createTour = factory.createOne(Tour);
 // exports.createTour = catchAsync(async (req, res, next) => {
