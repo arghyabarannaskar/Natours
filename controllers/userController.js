@@ -1,7 +1,7 @@
-const user = require('./../models/userModel');
+const userModel = require('./../models/userModel');
 const catchAsync = require('./../utils/catchAsync');
 const AppError = require('./../utils/appError');
-const userModel = require('./../models/userModel');
+const factory = require('./handlerFactory');
 
 const filterObj = (obj, ...allowedFields) => {
   newObj = {};
@@ -13,7 +13,7 @@ const filterObj = (obj, ...allowedFields) => {
 };
 
 exports.getAllUsers = catchAsync(async (req, res, next) => {
-  const users = await user.find();
+  const users = await userModel.find();
   res.status(200).json({
     status: 'success',
     results: users.length,
@@ -81,15 +81,8 @@ exports.createUser = (req, res) => {
     message: 'This route is not yet defined!'
   });
 };
-exports.updateUser = (req, res) => {
-  res.status(500).json({
-    status: 'error',
-    message: 'This route is not yet defined!'
-  });
-};
-exports.deleteUser = (req, res) => {
-  res.status(500).json({
-    status: 'error',
-    message: 'This route is not yet defined!'
-  });
-};
+
+// Do not update PASSWORD with this
+exports.updateUser = factory.updateOne(userModel);
+
+exports.deleteUser = factory.deleteOne(userModel);
