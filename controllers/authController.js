@@ -8,22 +8,24 @@ const crypto = require('crypto');
 
 const signToken = id => {
   const token = jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRATION
+    expiresIn: process.env.JWT_EXPIRES_IN || '1d'
   });
 
   return token;
 };
 
 const createSendToken = (user, statusCode, res) => {
-  const jwtCookieExpiresIn = Number(process.env.JWT_COOKIE_EXPIRES_IN);
+  const jwtCookieExpiresIn = Number(process.env.JWT_COOKIE_EXPIRES_IN) || 7;
   const token = signToken(user._id);
   const cookieOptions = {
-    expires: new Date(Date.now() + jwtCookieExpiresIn * 24 * 60 * 60 * 1000),
+    expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
     httpOnly: true
   };
   if (process.env.NODE_ENV == 'production') cookieOptions.secure = true;
 
   res.cookie('jwt', token, cookieOptions);
+
+  // Remove password from output
   user.password = undefined;
 
   res.status(statusCode).json({
@@ -36,7 +38,12 @@ const createSendToken = (user, statusCode, res) => {
 };
 
 exports.signup = catchAsync(async function(req, res, next) {
-  const newUser = await userModel.create(req.body);
+  const newUser = await userModel.create({
+    name: req.body.name,
+    email: req.body.email,
+    password: req.body.password,
+    passwordConfirm: req.body.passwordConfirm
+  });
   createSendToken(newUser, 201, res);
 });
 
@@ -60,12 +67,16 @@ exports.login = catchAsync(async (req, res, next) => {
   }
 
   // 3) If everything is ok, send token to client
-  const token = signToken(user._id);
-  res.status(200).json({
-    status: 'success',
-    token
-  });
+  createSendToken(user, 200, res);
 });
+
+exports.logout = (req, res) => {
+  res.cookie('jwt', 'loggedout', {
+    expires: new Date(Date.now() + 10 * 1000),
+    httpOnly: true
+  });
+  res.status(200).json({ status: 'success' });
+};
 
 exports.protect = catchAsync(async (req, res, next) => {
   let token;
@@ -98,6 +109,40 @@ exports.protect = catchAsync(async (req, res, next) => {
 
   // GRANT ACCESS TO PROTECTED ROUTE
   req.user = currentUser;
+  res.locals.user = currentUser;
+  next();
+});
+
+// Only for rendered pages, no errors
+exports.isLoggedIn = catchAsync(async (req, res, next) => {
+  console.log('Cookies:', req.cookies);
+  console.log('isLoggedIn middleware triggered');
+
+  if (req.cookies.jwt) {
+    try {
+      // 2) Verification of token
+      const decoded = await promisify(jwt.verify)(
+        req.cookies.jwt,
+        process.env.JWT_SECRET
+      );
+
+      // 3) Check if user still exists
+      const currentUser = await userModel.findById(decoded.id);
+      if (!currentUser) return next();
+
+      // 4) Check if user changed password after token was issued
+      if (currentUser.changedPasswordAfter(decoded.iat)) {
+        return next();
+      }
+
+      console.log(currentUser);
+      // There is a logged in user
+      res.locals.user = currentUser;
+      return next();
+    } catch (err) {
+      return next();
+    }
+  }
   next();
 });
 
