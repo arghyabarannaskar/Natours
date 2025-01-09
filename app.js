@@ -16,12 +16,13 @@ const reviewRouter = require('./routes/reviewRoutes');
 const viewRouter = require('./routes/viewsRoutes');
 
 const app = express();
-app.use(cookieParser());
 app.set('view engine', 'pug');
 // serving satic files
 app.set('views', path.join(__dirname, 'views'));
 
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+app.use(cookieParser());
 
 // 1) GLOBAL MIDDLEWARES
 // Set security HTTP headers
@@ -32,10 +33,14 @@ app.use(
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'", 'https://unpkg.com'],
-        styleSrc: ["'self'", 'https://fonts.googleapis.com'],
+        styleSrc: [
+          "'self'",
+          'https://fonts.googleapis.com',
+          (req, res) => `'nonce-${res.locals.styleNonce}'`
+        ],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
         imgSrc: ["'self'", 'data:'],
-        connectSrc: ["'self'", 'http://127.0.0.1:3000'] // Allow API requests
+        connectSrc: ["'self'", 'http://127.0.0.1:3000', 'ws://localhost:*'] // Allow API requests
       }
     }
   })

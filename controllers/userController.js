@@ -6,7 +6,7 @@ const factory = require('./handlerFactory');
 const filterObj = (obj, ...allowedFields) => {
   newObj = {};
   Object.keys(obj).forEach(el => {
-    if (allowedFields.includes(el)) newObj[el] = boj[el];
+    if (allowedFields.includes(el)) newObj[el] = obj[el];
   });
 
   return newObj;
@@ -23,7 +23,7 @@ exports.getAllUsers = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.updateMe = async (req, res, next) => {
+exports.updateMe = catchAsync(async (req, res, next) => {
   // 1) Create error if user POSTs password data
   if (req.body.password || req.body.passwordConfirm) {
     return next(
@@ -49,7 +49,7 @@ exports.updateMe = async (req, res, next) => {
       updatedUser
     }
   });
-};
+});
 
 exports.getMe = (req, res, next) => {
   req.params.id = req.user.id;
